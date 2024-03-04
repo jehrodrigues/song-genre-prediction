@@ -24,7 +24,7 @@ class BaselinePredict:
         Args:
             sentence (str): sentence
         Returns:
-            binary class (str): hate (class 0) | not-hate (class 1)
+            multi class (str): Dance (class 0) | Heavy Metal (class 1) | Hip Hop (class 2) | Indie (class 3) | Pop (class 4) | Rock (class 5)
         """
         # predict
         return self._model.predict([sentence])
