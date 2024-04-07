@@ -1,4 +1,4 @@
-# Song Genre Prediction with Logistic Regression and Transformers
+# [LDSSA Hackathon] - Song Genre Prediction (NLP Specialization)
 
 This repo aims to perform the classification of song genre data into Rock, Pop or Hip Hop. It fine-tunes and evaluates one pre-trained transformer models on a song-lyrics dataset.
 
