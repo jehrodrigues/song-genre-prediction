@@ -1,12 +1,79 @@
 import logging
-import argparse
+import numpy as np
+import spacy
+import re
+import string
+
+# NLTK imports
+from nltk.tokenize import WordPunctTokenizer
+from nltk.stem.snowball import SnowballStemmer
+from nltk.corpus import stopwords
+
 from pathlib import Path
 from src.data.read_dataset import get_data
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+from sklearn.base import TransformerMixin, BaseEstimator
+nlp = spacy.load("en_core_web_lg")
 
 project_dir = Path(__file__).resolve().parents[2]
+
+
+# Custom transformer to implement sentence cleaning
+class TextCleanerTransformer(TransformerMixin):
+    def __init__(self, tokenizer, stemmer, regex_list,
+                 lower=True, remove_punct=True):
+        self.tokenizer = tokenizer
+        self.stemmer = stemmer
+        self.regex_list = regex_list
+        self.lower = lower
+        self.remove_punct = remove_punct
+
+    def transform(self, X, *_):
+        X = list(map(self._clean_sentence, X))
+        return X
+
+    def _clean_sentence(self, sentence):
+
+        # Replace given regexes
+        for regex in self.regex_list:
+            sentence = re.sub(regex[0], regex[1], sentence)
+
+        # Lowercase
+        if self.lower:
+            sentence = sentence.lower()
+
+        # Split sentence into list of words
+        words = self.tokenizer.tokenize(sentence)
+
+        # Remove punctuation
+        if self.remove_punct:
+            words = list(filter(lambda x: x not in string.punctuation, words))
+
+        # Stem words
+        if self.stemmer:
+            words = map(self.stemmer.stem, words)
+
+        # Join list elements into string
+        sentence = " ".join(words)
+
+        return sentence
+
+    def fit(self, *_):
+        return self
+
+
+class VectorTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, nlp):
+        self.nlp = nlp
+        self.dim = 300
+
+    def fit(self, X, y):
+        return self
+
+    def transform(self, X):
+        return np.array([self.nlp(text).vector for text in X])
 
 
 class BaselinePredict:
@@ -24,23 +91,31 @@ class BaselinePredict:
         Args:
             sentence (str): sentence
         Returns:
-            multi class (str): Dance (class 0) | Heavy Metal (class 1) | Hip Hop (class 2) | Indie (class 3) | Pop (class 4) | Rock (class 5)
+            multi classes (str): rock | pop | hip hop
         """
         # predict
-        return self._model.predict([sentence])
+        test_pred = self._model.predict([sentence])
+        return test_pred
 
     def train(self, model) -> str:
         """Train a logistic regression method"""
         try:
+            # Initialize a tokenizer and a stemmer
+            tokenizer = WordPunctTokenizer()
+            stemmer = SnowballStemmer("english", ignore_stopwords=True)
+            regex_list = [("<[^>]*>", "")]
+
             # pipeline
             pipeline = Pipeline([
-                ('vect', CountVectorizer()),
+                ('prep', TextCleanerTransformer(tokenizer, stemmer, regex_list)),
+                ('text_embeddings', VectorTransformer(nlp)),
+                #('vect', CountVectorizer(stop_words='english', ngram_range=(1,2))),
                 #('tfidf', TfidfTransformer()),
                 ('lr', LogisticRegression(multi_class='auto', max_iter=10000))
             ])
 
             # data
-            df_train, _ = get_data()
+            df_train, _, _ = get_data()
 
             # text
             train_texts = df_train['text']
@@ -51,4 +126,4 @@ class BaselinePredict:
             return pipeline
 
         except Exception:
-            logging.error(f'directory or model is invalid or does not exist: {self._model_name}')
+            logging.error(f'directory or model is invalid or does not exist: {self._model}')

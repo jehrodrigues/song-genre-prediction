@@ -1,12 +1,10 @@
-# Song Genre Prediction
+# Song Genre Prediction with Logistic Regression and Transformers
 
-This repo aims to perform the classification of genre data into 0 (**Dance**), label 1 (**Heavy Metal**), label 2 (**Hip Hop**), label 3 (**Indie**), label 4 (**Pop**), label 5 (**Rock**).
+This repo aims to perform the classification of song genre data into Rock, Pop or Hip Hop. It fine-tunes and evaluates one pre-trained transformer models on a song-lyrics dataset.
 
 ---
 
 ### Contents
-
-* [Installation](#installation)
 * [Experimentation](#Experimentation)
 
 ---
@@ -16,11 +14,12 @@ This repo aims to perform the classification of genre data into 0 (**Dance**), l
 $ virtualenv venv -p python3
 $ source venv/bin/activate
 $ pip install -r requirements.txt
+$ pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
 ## Experimentation
 
-Perform train and prediction of music genre on test data.
+Perform evaluation of Song-genre Classification models on test data.
 
 ```console
 $ cd notebooks/
